@@ -9,10 +9,10 @@ namespace VNyanMonitorPlus
     class LZMainWindow : MonoBehaviour, IDragHandler, IPointerDownHandler
     {
         [Header("Plugin Manifest")]
-        [SerializeField] private string PluginVersion = "v0";
-        [SerializeField] private string PluginTitle = "";
-        [SerializeField] private string PluginAuthor = "Lunazera";
-        [SerializeField] private string PluginWebsite = "https://github.com/Lunazera/";
+        private string PluginVersion = "v1";
+        private string PluginTitle = "LZ's Monitor Plus";
+        private string PluginAuthor = "Lunazera";
+        private string PluginWebsite = "https://git.gay/lunazera/VNyan-Monitor-Plus";
 
         [Header("Window Components")]
         [Tooltip("Object for background and outline")]
