@@ -8,8 +8,12 @@ Collection of custom monitor windows for VNyan. Includes 6 different monitors to
 
 Each sub-window won't run unless it's open, so it should be fairly lightweight. Though I wouldn't keep them open if you aren't using them. The Parameter Graph, Blendshape Graph and ARKit Monitor's especially can lower framerate if they're all open at the same time.
 
-![Screenshot of plugin windows](https://git.gay/lunazera/VNyan-Monitor-Plus/raw/branch/main/MonitorPlusPluginScreenshot.png)
+## Installation
+1. Download the latest [Release](https://git.gay/lunazera/VNyan-Monitor-Plus/releases) with the .dll and .vnobj files
+2. Save the files to your VNyan folder under `Items/Assemblies`.
+3. When VNyan loads, you should see the plugin under the Plugins menu. You can select which monitor windows you want to use
 
+![Screenshot of plugin windows](https://git.gay/lunazera/VNyan-Monitor-Plus/raw/branch/main/MonitorPlusPluginScreenshot.png)
 
 ### Mini Monitor
 ### Text Monitor
@@ -17,8 +21,4 @@ Each sub-window won't run unless it's open, so it should be fairly lightweight. 
 ### Blendshape Graph
 ### ARKit Monitor
 ### Dictionary Monitor
-
-## Installation
-1. Download the .dll and .vnobj files
-2. Save the files to your VNyan folder under `Items/Assemblies`.
-3. When VNyan loads, you should see the plugin under the Plugins menu. You can select which monitor windows you want to use.
+### FPS Monitor
