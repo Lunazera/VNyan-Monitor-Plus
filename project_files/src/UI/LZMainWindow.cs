@@ -9,7 +9,7 @@ namespace VNyanMonitorPlus
     class LZMainWindow : MonoBehaviour, IDragHandler, IPointerDownHandler
     {
         [Header("Plugin Manifest")]
-        private string PluginVersion = "v1";
+        private string PluginVersion = "v1.2";
         private string PluginTitle = "LZ's Monitor Plus";
         private string PluginAuthor = "Lunazera";
         private string PluginWebsite = "https://git.gay/lunazera/VNyan-Monitor-Plus";
@@ -53,6 +53,9 @@ namespace VNyanMonitorPlus
         [SerializeField] public GameObject BlendshapeGraphPrefab;
         [SerializeField] private Button BlendshapeGraphButton;
 
+        [SerializeField] public GameObject FPSGraphPrefab;
+        [SerializeField] private Button FPSGraphButton;
+
 
         private RectTransform mainRect;
         private Button VersionURLButton;
@@ -79,6 +82,8 @@ namespace VNyanMonitorPlus
             ARKitButton.onClick.AddListener(OnARKitButtonClicked);
             DictMonitorButton.onClick.AddListener(OnDictMonitorButtonClicked);
             BlendshapeGraphButton.onClick.AddListener(OnBlendshapeGraphButtonClicked);
+            FPSGraphButton.onClick.AddListener(FPSGraphButtonClicked);
+
 
             // Theme applies if we aren't in editor
             if (!Application.isEditor)
@@ -159,6 +164,16 @@ namespace VNyanMonitorPlus
             if (!BlendshapeGraphPrefab.activeSelf)
                 return;
             BlendshapeGraphPrefab.transform.SetAsLastSibling();
+        }
+
+        public void FPSGraphButtonClicked()
+        {
+            if ((UnityEngine.Object)FPSGraphPrefab == (UnityEngine.Object)null)
+                return;
+            FPSGraphPrefab.SetActive(!FPSGraphPrefab.activeSelf);
+            if (!FPSGraphPrefab.activeSelf)
+                return;
+            FPSGraphPrefab.transform.SetAsLastSibling();
         }
 
         /// <summary>

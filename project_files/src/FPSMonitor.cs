@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TMPro;
-using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using VNyanInterface;
+using VNyanMonitorPlus;
 
 namespace VNyanMonitorPlus
 {
-    public class ParamGraph : MonoBehaviour, IDragHandler, IPointerDownHandler
+    public class FPSMonitor : MonoBehaviour, IDragHandler, IPointerDownHandler
     {
         [Header("Window Components")]
         [Tooltip("Object for background and outline")]
@@ -26,61 +26,32 @@ namespace VNyanMonitorPlus
         [SerializeField] private GameObject windowPrefab;
 
         private RectTransform mainRect;
-
         [SerializeField] private GameObject GraphArea;
         private RectTransform GraphAreaRect;
 
-        [Header("Graph Display")]
+        [Header("FPS Display")]
+        private float averageFPS = 0f;
+        [SerializeField] private float RefreshFrequency = 0.4f;
+        private float TimeSinceUpdate = 0f;
+        [SerializeField] private float SmoothingFactor = 0.9f;
+        [SerializeField] private TMP_Text FPSText;
+
+        [Header("FPS Graph")]
         [SerializeField] private GameObject DataContainer;
         [SerializeField] private GameObject axis;
         [SerializeField] private GameObject DataPointPrefab;
-        [SerializeField] private int DataSize = 300;
-        private float maxValue = 1;
+        [SerializeField] private int DataSize = 80;
         private float spaceBetweenPoint;
-        private float axisHeightLimits = 100;
-        [SerializeField] public TMP_Text parameterValueText;
-
-        [Header("Controls")]
-        [SerializeField] private TMP_Text axisMin;
-        [SerializeField] private TMP_Text axisMax;
-        [SerializeField] private TMP_InputField AxisField;
-        [SerializeField] private Button AxisButton;
-        [SerializeField] private TMP_InputField ParamNameField;
-        [SerializeField] private Button ParamNameButton;
-
-
+        private float axisHeightLimits = 100f;
+        [SerializeField] private float MaxFPS = 120f;
         private float[]? DataArray;
 
-        private string currentParameterName = "";
-        private float paramValue = 0;
-
-        public void setParamName(string name) => currentParameterName = name;
-
-        public float getParamValue()
-        {
-            if (!string.IsNullOrEmpty(currentParameterName))
-            {
-                return VNyanInterface.VNyanInterface.VNyanParameter.getVNyanParameterFloat(currentParameterName);
-            }
-            return 0f;
-        }
-        
         public void AddNewPoint(Vector3 position, int i)
         {
             GameObject datum = Instantiate<GameObject>(DataPointPrefab);
             datum.name = "point " + i;
             datum.transform.position = position;
             datum.transform.SetParent(DataContainer.transform);
-        }
-
-        public void SetAxisScale(float scale)
-        {
-            maxValue = scale;
-        }
-        public void setAxisLabels(float value)
-        {
-            axisMin.text = (-value).ToString();
-            axisMax.text = value.ToString();
         }
 
         void Start()
@@ -90,44 +61,47 @@ namespace VNyanMonitorPlus
             GraphAreaRect = GraphArea.GetComponent(typeof(RectTransform)) as RectTransform;
 
             // calculate space between points based on graph area size
-            spaceBetweenPoint = GraphAreaRect.rect.width / (float)DataSize - 0.02f;
-            axisHeightLimits = GraphAreaRect.rect.height/2;
-
-            // Link Close button
-            closeButton.onClick.AddListener(delegate { CloseButtonClicked(); });
-
-            AxisButton.onClick.AddListener(delegate { AxisButtonPressCheck(); });
-            ParamNameButton.onClick.AddListener(delegate { ParamNameButtonPressCheck(); });
+            spaceBetweenPoint = GraphAreaRect.rect.width / (float)DataSize - 0.04f;
+            axisHeightLimits = GraphAreaRect.rect.height;
 
             DataArray = new float[DataSize];
-
             for (int i = 0; i < DataSize; i++)
             {
                 Vector3 pointPosition = new Vector3(1f * i, 0f, 0f);
                 AddNewPoint(pointPosition, i);
             }
 
-            // Theme applies if we aren't in editor
+            // Link Close button
+            closeButton.onClick.AddListener(delegate { CloseButtonClicked(); });
+
             if (!Application.isEditor)
             {
                 changeThemeSettings();
                 VNyanInterface.VNyanInterface.VNyanUI.colorThemeChanged += changeThemeSettings; // Re-init colors when this event fires
             }
         }
+
         void Update()
         {
-            float paramVal = getParamValue();
+            // Exponentially weighted moving average (EWMA)
+            averageFPS = SmoothingFactor * averageFPS + (1f - SmoothingFactor) * 1f / Time.unscaledDeltaTime;
+
+            if (TimeSinceUpdate < RefreshFrequency)
+            {
+                TimeSinceUpdate += Time.deltaTime;
+                return;
+            }
+
+            // reset time since update
+            TimeSinceUpdate = 0f;
 
             // Get position of axis for reference
             float xAxisPosition = axis.transform.position.x;
-            float yAxisPosition = axis.transform.position.y;
-
-            // Change text value
-            parameterValueText.text = paramVal.ToString("0.000");
+            float yAxisPosition = axis.transform.position.y - axisHeightLimits / 2;
 
             // Process data value
-            float yPosition = paramVal / maxValue * axisHeightLimits;
-            
+            float yPosition = averageFPS / MaxFPS * axisHeightLimits;
+
             // Shift all values in the data array
             for (int i = 0; i < DataSize - 1; i++)
             {
@@ -147,15 +121,16 @@ namespace VNyanMonitorPlus
                 {
                     data_point = axisHeightLimits;
                 }
-                else if (data_point < -axisHeightLimits)
+                else if (data_point < 0)
                 {
-                    data_point = -axisHeightLimits;
+                    data_point = 0;
                 }
 
-                Vector3 new_position = new Vector3(spaceBetweenPoint * j + xAxisPosition + 5, data_point + yAxisPosition, 0);
+                Vector3 new_position = new Vector3(spaceBetweenPoint * j + xAxisPosition + 2, data_point + yAxisPosition, 0);
 
                 DataContainer.transform.GetChild(j).transform.position = new_position;
             }
+            FPSText.text = averageFPS.ToString("0.0");
         }
 
         public void changeThemeSettings()
@@ -176,63 +151,22 @@ namespace VNyanMonitorPlus
             Color32 PanelComponentTextColor = LZUIManager.hexToColor(VNyanInterface.VNyanInterface.VNyanUI.getCurrentThemeColor(ThemeComponent.PanelComponentText));
             Color32 PanelComponentTextColorTransparent = LZUIManager.hexToColor(VNyanInterface.VNyanInterface.VNyanUI.getCurrentThemeColor(ThemeComponent.PanelComponentText), 70);
 
-
+            // Set UI Colors from VNyan
             // Set UI Colors from VNyan
             Background.GetComponent<Image>().color = Panel;
             Background.GetComponent<Outline>().effectColor = Borders;
-            Title.color = TextColor;
             closeButton.GetComponent<Image>().color = Panel;
+            Title.color = TextColor;
             closeButton.GetComponent<Outline>().effectColor = Borders;
             closeButton.GetComponentInChildren<TMP_Text>().color = TextColor;
-
-            parameterValueText.GetComponent<TMP_Text>().color = TextColor;
-
-            // Set Axis input colours 
-            // Input field colors
-            ColorBlock cbmainField = AxisField.colors;
-            AxisField.GetComponent<Image>().color = ComponentColor;
-            cbmainField.normalColor = ComponentColor;
-            cbmainField.highlightedColor = ComponentHighlight;
-            cbmainField.selectedColor = ComponentColor;
-
-            AxisField.textComponent.color = TextColor;
-            AxisField.placeholder.color = PanelComponentTextColorTransparent;
-
-            // Button colors
-            ColorBlock cbmainButton = AxisButton.colors;
-            AxisButton.GetComponent<Image>().color = ButtonColor;
-            cbmainButton.normalColor = ButtonColor;
-            cbmainButton.highlightedColor = ButtonColorHighlight;
-            cbmainButton.selectedColor = ButtonColor;
-
-            AxisButton.GetComponentInChildren<TMP_Text>().color = ButtonTextColor;
-
-            // Set Param Name input colours
-            // Input field colors
-            ColorBlock cbNameField = ParamNameField.colors;
-            ParamNameField.GetComponent<Image>().color = ComponentColor;
-            cbNameField.normalColor = ComponentColor;
-            cbNameField.highlightedColor = ComponentHighlight;
-            cbNameField.selectedColor = ComponentColor;
-
-            ParamNameField.textComponent.color = TextColor;
-            ParamNameField.placeholder.color = PanelComponentTextColorTransparent;
-
-            // Button colors
-            ColorBlock cbNameButton = ParamNameButton.colors;
-            ParamNameButton.GetComponent<Image>().color = ButtonColor;
-            cbNameButton.normalColor = ButtonColor;
-            cbNameButton.highlightedColor = ButtonColorHighlight;
-            cbNameButton.selectedColor = ButtonColor;
-
-            ParamNameButton.GetComponentInChildren<TMP_Text>().color = ButtonTextColor;
-
+            FPSText.GetComponent<TMP_Text>().color = TextColor;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
             mainRect.anchoredPosition += eventData.delta;
         }
+
         public void OnPointerDown(PointerEventData eventData)
         {
             mainRect.SetAsLastSibling();
@@ -240,22 +174,6 @@ namespace VNyanMonitorPlus
         public void CloseButtonClicked()
         {
             this.windowPrefab.SetActive(false);
-        }
-        void AxisButtonPressCheck()
-        {
-            if (float.TryParse(AxisField.text, out float fieldValue))
-            {
-                SetAxisScale(fieldValue);
-                setAxisLabels(fieldValue);
-            }
-            else
-            {
-                AxisField.text = "";
-            }
-        }
-        void ParamNameButtonPressCheck()
-        {
-            setParamName(ParamNameField.text);
         }
     }
 }
