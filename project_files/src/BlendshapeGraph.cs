@@ -39,6 +39,8 @@ namespace VNyanMonitorPlus
         private float spaceBetweenPoint;
         private float axisHeightLimits = 100;
         [SerializeField] public TMP_Text parameterValueText;
+        [SerializeField] private TMP_Text axis0;
+        [SerializeField] private TMP_Text axis100;
 
         [Header("Controls")]
         [SerializeField] private TMP_Text axisMax;
@@ -181,6 +183,9 @@ namespace VNyanMonitorPlus
             closeButton.GetComponent<Image>().color = Panel;
             closeButton.GetComponent<Outline>().effectColor = Borders;
             closeButton.GetComponentInChildren<TMP_Text>().color = TextColor;
+
+            axis0.color = PanelComponentTextColor;
+            axis100.color = PanelComponentTextColor;
 
             // Text for parameter display
             parameterValueText.GetComponent<TMP_Text>().color = TextColor;

@@ -46,6 +46,12 @@ namespace VNyanMonitorPlus
         [SerializeField] private float MaxFPS = 120f;
         private float[]? DataArray;
 
+        [Header("FPS Graph axis")]
+        [SerializeField] private TMP_Text axis0;
+        [SerializeField] private TMP_Text axis30;
+        [SerializeField] private TMP_Text axis60;
+        [SerializeField] private TMP_Text axis90;
+
         public void AddNewPoint(Vector3 position, int i)
         {
             GameObject datum = Instantiate<GameObject>(DataPointPrefab);
@@ -160,6 +166,11 @@ namespace VNyanMonitorPlus
             closeButton.GetComponent<Outline>().effectColor = Borders;
             closeButton.GetComponentInChildren<TMP_Text>().color = TextColor;
             FPSText.GetComponent<TMP_Text>().color = TextColor;
+
+            axis0.color = PanelComponentTextColor;
+            axis30.color = PanelComponentTextColor;
+            axis60.color = PanelComponentTextColor;
+            axis90.color = PanelComponentTextColor;
         }
 
         public void OnDrag(PointerEventData eventData)
